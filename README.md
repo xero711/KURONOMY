@@ -6,24 +6,15 @@ GitHub Pages で公開する静的サイトです。旧環境の `/api/status` �
 
 1. この `HomePage` ディレクトリの中身を GitHub Pages 用リポジトリの公開ルートに置く。
 2. GitHub の `Settings > Pages` で公開元ブランチを選ぶ。
-3. `Custom domain` に `xero-x.me` を設定する。
-4. `CNAME` は `xero-x.me` の 1 行だけにする。
+3. 公開 URL は `https://xero-x.me/KURONOMY/` を想定する。
+4. `xero-x.me` 直下に公開したい場合は、現在そのドメインを使っている別リポジトリからカスタムドメイン設定を外してから、このリポジトリに設定する。
 5. HTTPS 証明書が発行されたら `Enforce HTTPS` を有効にする。
 
 ## DNS
 
-Web は GitHub Pages に向け、Minecraft は SRV レコードでゲームサーバーへ向ける構成を想定しています。
+Web は既存の GitHub Pages ドメインに向け、Minecraft は SRV レコードでゲームサーバーへ向ける構成を想定しています。
 
 ```text
-@     A      185.199.108.153
-@     A      185.199.109.153
-@     A      185.199.110.153
-@     A      185.199.111.153
-@     AAAA   2606:50c0:8000::153
-@     AAAA   2606:50c0:8001::153
-@     AAAA   2606:50c0:8002::153
-@     AAAA   2606:50c0:8003::153
-www   CNAME  <github-user-or-org>.github.io
 mc    A      <minecraft-server-public-ip>
 _minecraft._tcp  SRV  0 0 25565 mc.xero-x.me
 ```
