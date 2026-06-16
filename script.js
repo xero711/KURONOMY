@@ -33,7 +33,7 @@ function firstLine(value) {
 
 function playerNamesFromStatus(status) {
     const players = status.players || {};
-    const list = players.list;
+    const list = players.list || players.sample || players.names;
     if (!Array.isArray(list)) {
         return null;
     }
@@ -42,9 +42,17 @@ function playerNamesFromStatus(status) {
         .map((player) => {
             if (typeof player === 'string') return player;
             if (player && typeof player.name === 'string') return player.name;
+            if (player && typeof player.username === 'string') return player.username;
             return '';
         })
         .filter(Boolean);
+}
+
+function playerListUnavailableMessage(status, onlineCount) {
+    if (status.debug && status.debug.query === false) {
+        return `${onlineCount} 人がオンラインです。名前一覧は Query 反映待ちです`;
+    }
+    return `${onlineCount} 人がオンラインです`;
 }
 
 function renderPlayerList(names, message) {
@@ -154,7 +162,7 @@ async function loadServerStatus() {
 
         const onlineCount = data.players?.online || 0;
         if (onlineCount > 0) {
-            renderPlayerList([], `${onlineCount} 人がオンラインです`);
+            renderPlayerList([], playerListUnavailableMessage(data, onlineCount));
             return;
         }
 
