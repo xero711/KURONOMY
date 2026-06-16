@@ -73,13 +73,22 @@ function statusFreshnessTime(status) {
 }
 
 function chooseBestStatus(statuses) {
-    const newestStatusTime = Math.max(0, ...statuses.map(statusFreshnessTime));
+    const statusInfos = statuses.map((status) => {
+        const names = playerNamesFromStatus(status);
+        return {
+            status,
+            names,
+            onlineCount: status.players?.online || 0,
+            freshness: statusFreshnessTime(status),
+        };
+    });
+    const newestStatusTime = Math.max(0, ...statusInfos.map((info) => info.freshness));
+    const newestEmptyStatus = statusInfos
+        .filter((info) => info.status.online && info.onlineCount === 0 && (!info.names || info.names.length === 0))
+        .sort((a, b) => b.freshness - a.freshness)[0];
     let best = null;
 
-    for (const status of statuses) {
-        const names = playerNamesFromStatus(status);
-        const onlineCount = status.players?.online || 0;
-        const freshness = statusFreshnessTime(status);
+    for (const { status, names, onlineCount, freshness } of statusInfos) {
         const lagMs = newestStatusTime - freshness;
         let score = status.online ? 1 : 0;
 
@@ -91,9 +100,11 @@ function chooseBestStatus(statuses) {
             score = 3;
         }
 
-        if (lagMs > 120000) {
+        if (names && names.length > 0 && newestEmptyStatus && newestEmptyStatus.freshness - freshness > 10000) {
+            score -= 4;
+        } else if (lagMs > 60000) {
             score -= 3;
-        } else if (lagMs > 45000) {
+        } else if (lagMs > 20000) {
             score -= 1;
         }
 
