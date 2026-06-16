@@ -184,40 +184,30 @@ async function fetchStatus(endpoint) {
 async function loadServerStatus() {
     let bestStatus = null;
     let bestNames = null;
+    let bestScore = -1;
 
     for (const endpoint of STATUS_API_ENDPOINTS) {
         try {
             const status = await fetchStatus(endpoint);
             const names = playerNamesFromStatus(status);
             const onlineCount = status.players?.online || 0;
+            let score = status.online ? 1 : 0;
 
-            if (!bestStatus) {
+            if (status.online && onlineCount > 0) {
+                score = 2;
+            }
+
+            if (status.online && names && names.length > 0) {
+                score = 3;
+            }
+
+            if (!bestStatus || score > bestScore) {
                 bestStatus = status;
                 bestNames = names;
+                bestScore = score;
             }
 
-            if (!status.online) {
-                bestStatus = status;
-                bestNames = [];
-                break;
-            }
-
-            if (names && names.length > 0) {
-                bestStatus = status;
-                bestNames = names;
-                break;
-            }
-
-            if (onlineCount > 0 && status.debug && status.debug.query === false) {
-                bestStatus = status;
-                bestNames = names;
-            }
-
-            if (onlineCount === 0 && names) {
-                bestStatus = status;
-                bestNames = [];
-                break;
-            }
+            if (score === 3) break;
         } catch {}
     }
 
