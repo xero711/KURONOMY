@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="KURONOMY Minecraft 1.20.1 Fabric server homepage.">
+    <title>KURONOMY</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="image.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Syne:wght@600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20260616">
+</head>
+<body>
+    <div class="page-bg" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="minecraft-particles" aria-hidden="true"></div>
+    <div class="gold-particles" aria-hidden="true"></div>
+
+    <div class="gold-sparkle gold-sparkle-1" aria-hidden="true"></div>
+    <div class="gold-sparkle gold-sparkle-2" aria-hidden="true"></div>
+    <div class="gold-sparkle gold-sparkle-3" aria-hidden="true"></div>
+    <div class="corner-decoration corner-tl" aria-hidden="true"></div>
+    <div class="corner-decoration corner-tr" aria-hidden="true"></div>
+    <div class="corner-decoration corner-bl" aria-hidden="true"></div>
+    <div class="corner-decoration corner-br" aria-hidden="true"></div>
+    <div class="gold-line gold-line-1" aria-hidden="true"></div>
+    <div class="gold-line gold-line-2" aria-hidden="true"></div>
+
+    <div class="floating-blocks" aria-hidden="true">
+        <div class="floating-block" style="--x:10%;--y:20%;--delay:0s;--size:24px">#</div>
+        <div class="floating-block" style="--x:85%;--y:15%;--delay:2s;--size:20px">+</div>
+        <div class="floating-block" style="--x:70%;--y:60%;--delay:4s;--size:28px">[]</div>
+        <div class="floating-block" style="--x:15%;--y:75%;--delay:1s;--size:22px">&lt;&gt;</div>
+        <div class="floating-block" style="--x:90%;--y:80%;--delay:3s;--size:26px">*</div>
+    </div>
+
+    <div class="layout">
+        <header class="site-header">
+            <div class="site-header__stripe" aria-hidden="true"></div>
+            <div class="minecraft-torch" aria-hidden="true"></div>
+            <p class="site-header__eyebrow">Minecraft 1.20.1 Fabric</p>
+            <h1 class="site-header__title">KURONOMY</h1>
+            <p class="site-header__lead">工業、魔法、ダンジョン、冒険をまとめて遊ぶホワイトリスト制サーバーです。</p>
+            <div class="site-header__links">
+                <button type="button" id="copy-server-address" class="header-link header-link--button" data-copy-label="xero-x.me をコピー" data-copied-label="コピー完了">xero-x.me をコピー</button>
+                <a href="https://discord.gg/X5HpzENpRD" target="_blank" rel="noopener" class="header-link">Discord</a>
+                <a href="https://youtu.be/u8Yfi7xUyHI" target="_blank" rel="noopener" class="header-link">MOD導入ガイド</a>
+            </div>
+        </header>
+
+        <main class="main">
+            <section class="mod-panel" aria-labelledby="server-heading">
+                <div class="mod-panel__bar" aria-hidden="true"></div>
+                <div class="mod-panel__inner">
+                    <h2 id="server-heading" class="mod-panel__heading">SERVER</h2>
+                    <div class="server-summary">
+                        <div class="status-card status-card--state is-warning">
+                            <span class="status-card__label">Status</span>
+                            <strong id="server-status" class="status-card__value">Checking</strong>
+                        </div>
+                        <div class="status-card">
+                            <span class="status-card__label">Address</span>
+                            <strong id="server-address" class="status-card__value">xero-x.me</strong>
+                        </div>
+                        <div class="status-card">
+                            <span class="status-card__label">Players</span>
+                            <strong id="server-players" class="status-card__value">- / 80</strong>
+                        </div>
+                        <div class="status-card">
+                            <span class="status-card__label">Version</span>
+                            <strong id="server-version" class="status-card__value">Java 1.20.1 Fabric</strong>
+                        </div>
+                    </div>
+                    <p id="status-note" class="status-note" aria-live="polite">公開ステータス API から取得しています</p>
+                    <h3 class="player-heading">Online Players</h3>
+                    <ul class="player-list" id="player-list" aria-live="polite">
+                        <li class="player-list__empty">ステータス取得待ちです</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="mod-panel" aria-labelledby="mod-panel-heading">
+                <div class="mod-panel__bar" aria-hidden="true"></div>
+                <div class="mod-panel__inner">
+                    <h2 id="mod-panel-heading" class="mod-panel__heading">MOD</h2>
+                    <ul class="mod-list">
+                        <li data-mod="create"><span class="modname">Create</span><span class="moddesc">歯車、ベルト、列車、自動化ラインを組める工業系の中心MOD。<a href="https://modrinth.com/mod/create-fabric" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="rails"><span class="modname">Create: Steam 'n' Rails</span><span class="moddesc">Create の鉄道要素を拡張し、移動と物流を強化します。<a href="https://modrinth.com/mod/create-steam-n-rails" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="cannons"><span class="modname">Create Big Cannons</span><span class="moddesc">Create と連携する大型砲や砲弾製造の要素を追加します。<a href="https://modrinth.com/mod/create-big-cannons" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="biomes"><span class="modname">Biomes O' Plenty</span><span class="moddesc">探索先のバイオームと景観の幅を広げます。<a href="https://modrinth.com/mod/biomes-o-plenty" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="deeperdarker"><span class="modname">Deeper and Darker</span><span class="moddesc">Deep Dark 方面の冒険、ディメンション、装備を追加します。<a href="https://modrinth.com/mod/deeperdarker" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="dungeons"><span class="modname">Dungeons and Taverns</span><span class="moddesc">旅の途中で見つかるダンジョン、酒場、構造物を増やします。<a href="https://modrinth.com/datapack/dungeons-and-taverns" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="yungs"><span class="modname">YUNG's Better Structures</span><span class="moddesc">ダンジョン、要塞、ネザー要塞、エンド島をリワークします。<a href="https://modrinth.com/organization/yungnickyoung" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="rpg"><span class="modname">Archers / Paladins / Rogues / Wizards</span><span class="moddesc">職業、魔法、スキル、装備で戦闘ロールを広げます。<a href="https://modrinth.com/mod/wizards" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="food"><span class="modname">Farmer's Delight</span><span class="moddesc">料理、農業、食事まわりのクラフト体験を拡張します。<a href="https://modrinth.com/mod/farmers-delight-refabricated" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="backpack"><span class="modname">Sophisticated Backpacks</span><span class="moddesc">アップグレード可能なバックパックで探索と建築を快適にします。<a href="https://modrinth.com/mod/sophisticated-backpacks" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="currency"><span class="modname">Lightman's Currency</span><span class="moddesc">ショップ、通貨、取引の仕組みを追加します。<a href="https://modrinth.com/mod/lightmans-currency" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                        <li data-mod="voice"><span class="modname">Simple Voice Chat</span><span class="moddesc">近距離ボイスチャットで探索や作業中の連携をしやすくします。<a href="https://modrinth.com/plugin/simple-voice-chat" target="_blank" rel="noopener" class="mod-link">詳しくはこちら</a></span></li>
+                    </ul>
+                </div>
+            </section>
+
+            <p class="footnote">※前提MOD、パフォーマンス改善MOD、ライブラリ系MODは一部省略しています。</p>
+        </main>
+    </div>
+    <script src="script.js?v=20260616"></script>
+</body>
+</html>
