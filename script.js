@@ -4,9 +4,11 @@ const STATUS_API_ENDPOINTS = [
     { source: 'mcsrvstat', url: `https://api.mcsrvstat.us/3/${SERVER_ADDRESS}` },
 ];
 const POLL_MS = 3000;
-const FETCH_TIMEOUT_MS = 10000;
+const FETCH_TIMEOUT_MS = 4500;
 
 let cachedPlayerNames = [];
+let statusRequestId = 0;
+let statusRequestInFlight = false;
 
 function el(tag, attrs) {
     const node = document.createElement(tag);
@@ -34,6 +36,19 @@ function firstLine(value) {
     return value || '';
 }
 
+function cacheBustedUrl(url) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}_=${Date.now()}`;
+}
+
+function timestampToMs(value) {
+    const timestamp = Number(value);
+    if (!Number.isFinite(timestamp) || timestamp <= 0) {
+        return null;
+    }
+    return timestamp < 10000000000 ? timestamp * 1000 : timestamp;
+}
+
 function playerNamesFromStatus(status) {
     const players = status.players || {};
     const list = players.list || players.sample || players.names;
@@ -51,6 +66,43 @@ function playerNamesFromStatus(status) {
             return '';
         })
         .filter(Boolean);
+}
+
+function statusFreshnessTime(status) {
+    return status.retrievedAt || status.fetchedAt || 0;
+}
+
+function chooseBestStatus(statuses) {
+    const newestStatusTime = Math.max(0, ...statuses.map(statusFreshnessTime));
+    let best = null;
+
+    for (const status of statuses) {
+        const names = playerNamesFromStatus(status);
+        const onlineCount = status.players?.online || 0;
+        const freshness = statusFreshnessTime(status);
+        const lagMs = newestStatusTime - freshness;
+        let score = status.online ? 1 : 0;
+
+        if (status.online && onlineCount > 0) {
+            score = 2;
+        }
+
+        if (status.online && names && names.length > 0) {
+            score = 3;
+        }
+
+        if (lagMs > 120000) {
+            score -= 3;
+        } else if (lagMs > 45000) {
+            score -= 1;
+        }
+
+        if (!best || score > best.score || (score === best.score && freshness > best.freshness)) {
+            best = { status, names, score, freshness };
+        }
+    }
+
+    return best;
 }
 
 function playerListUnavailableMessage(status, onlineCount) {
@@ -169,85 +221,7 @@ function renderStatusError() {
     renderPlayerList(cachedPlayerNames, cachedPlayerNames.length ? '' : 'ステータス取得待ちです');
 }
 
-function normalizeStatus(data, source) {
-    if (source === 'mcstatus') {
-        return {
-            source,
-            online: Boolean(data.online),
-            players: {
-                online: data.players?.online ?? 0,
-                max: data.players?.max ?? 80,
-                list: data.players?.list || [],
-            },
-            version: data.version?.name_clean || data.version?.name_raw || data.version?.name || 'Java 1.20.1 Fabric',
-            motd: {
-                clean: data.motd?.clean || '',
-            },
-            hostname: data.srv_record?.host || data.host || SERVER_ADDRESS,
-        };
-    }
-
-    return {
-        ...data,
-        source,
-    };
-}
-
-async function fetchStatus(endpoint) {
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-
-    try {
-        const res = await fetch(endpoint.url, {
-            cache: 'no-store',
-            signal: controller.signal,
-        });
-        if (!res.ok) {
-            throw new Error(`Status API failed: ${res.status}`);
-        }
-
-        const data = await res.json();
-        return normalizeStatus(data, endpoint.source);
-    } finally {
-        window.clearTimeout(timeoutId);
-    }
-}
-
-async function loadServerStatus() {
-    let bestStatus = null;
-    let bestNames = null;
-    let bestScore = -1;
-
-    for (const endpoint of STATUS_API_ENDPOINTS) {
-        try {
-            const status = await fetchStatus(endpoint);
-            const names = playerNamesFromStatus(status);
-            const onlineCount = status.players?.online || 0;
-            let score = status.online ? 1 : 0;
-
-            if (status.online && onlineCount > 0) {
-                score = 2;
-            }
-
-            if (status.online && names && names.length > 0) {
-                score = 3;
-            }
-
-            if (!bestStatus || score > bestScore) {
-                bestStatus = status;
-                bestNames = names;
-                bestScore = score;
-            }
-
-            if (score === 3) break;
-        } catch {}
-    }
-
-    if (!bestStatus) {
-        renderStatusError();
-        return;
-    }
-
+function renderStatusResult(bestStatus, bestNames) {
     renderStatus(bestStatus);
 
     if (!bestStatus.online) {
@@ -270,6 +244,108 @@ async function loadServerStatus() {
 
     cachedPlayerNames = [];
     renderPlayerList([]);
+}
+
+function normalizeStatus(data, source) {
+    if (source === 'mcstatus') {
+        return {
+            source,
+            online: Boolean(data.online),
+            players: {
+                online: data.players?.online ?? 0,
+                max: data.players?.max ?? 80,
+                list: data.players?.list || [],
+            },
+            version: data.version?.name_clean || data.version?.name_raw || data.version?.name || 'Java 1.20.1 Fabric',
+            motd: {
+                clean: data.motd?.clean || '',
+            },
+            hostname: data.srv_record?.host || data.host || SERVER_ADDRESS,
+            retrievedAt: timestampToMs(data.retrieved_at),
+            expiresAt: timestampToMs(data.expires_at),
+        };
+    }
+
+    return {
+        ...data,
+        source,
+        retrievedAt: timestampToMs(data.debug?.cachetime),
+        expiresAt: timestampToMs(data.debug?.cacheexpire),
+    };
+}
+
+async function fetchStatus(endpoint) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    try {
+        const res = await fetch(cacheBustedUrl(endpoint.url), {
+            cache: 'no-store',
+            signal: controller.signal,
+        });
+        if (!res.ok) {
+            throw new Error(`Status API failed: ${res.status}`);
+        }
+
+        const data = await res.json();
+        const status = normalizeStatus(data, endpoint.source);
+        status.fetchedAt = Date.now();
+        return status;
+    } finally {
+        window.clearTimeout(timeoutId);
+    }
+}
+
+async function loadServerStatus() {
+    if (statusRequestInFlight) {
+        return;
+    }
+
+    const requestId = ++statusRequestId;
+    const statuses = [];
+    statusRequestInFlight = true;
+
+    function renderBestStatus(final = false) {
+        if (requestId !== statusRequestId || statuses.length === 0) {
+            return;
+        }
+
+        const best = chooseBestStatus(statuses);
+        if (!best) {
+            return;
+        }
+
+        if (!final && best.score < 3) {
+            return;
+        }
+
+        renderStatusResult(best.status, best.names);
+    }
+
+    try {
+        await Promise.allSettled(
+            STATUS_API_ENDPOINTS.map(async (endpoint) => {
+                const status = await fetchStatus(endpoint);
+                statuses.push(status);
+                renderBestStatus(false);
+            }),
+        );
+
+        if (requestId !== statusRequestId) {
+            return;
+        }
+
+        if (statuses.length === 0) {
+            renderStatusError();
+            return;
+        }
+
+        renderBestStatus(true);
+    } finally {
+        if (requestId === statusRequestId) {
+            statusRequestInFlight = false;
+        }
+    }
 }
 
 function initCopyButton() {
@@ -335,6 +411,12 @@ window.addEventListener('DOMContentLoaded', () => {
     initGoldParticles();
     loadServerStatus();
     setInterval(loadServerStatus, POLL_MS);
+
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            loadServerStatus();
+        }
+    });
 });
 
 function initParticles() {
