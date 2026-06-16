@@ -1,5 +1,8 @@
 const SERVER_ADDRESS = 'xero-x.me';
-const STATUS_API_URL = `https://api.mcsrvstat.us/3/${SERVER_ADDRESS}`;
+const STATUS_API_ENDPOINTS = [
+    { source: 'mcstatus', url: `https://api.mcstatus.io/v2/status/java/${SERVER_ADDRESS}` },
+    { source: 'mcsrvstat', url: `https://api.mcsrvstat.us/3/${SERVER_ADDRESS}` },
+];
 const POLL_MS = 3000;
 const FETCH_TIMEOUT_MS = 10000;
 
@@ -43,6 +46,8 @@ function playerNamesFromStatus(status) {
             if (typeof player === 'string') return player;
             if (player && typeof player.name === 'string') return player.name;
             if (player && typeof player.username === 'string') return player.username;
+            if (player && typeof player.name_clean === 'string') return player.name_clean;
+            if (player && typeof player.name_raw === 'string') return player.name_raw;
             return '';
         })
         .filter(Boolean);
@@ -50,9 +55,9 @@ function playerNamesFromStatus(status) {
 
 function playerListUnavailableMessage(status, onlineCount) {
     if (status.debug && status.debug.query === false) {
-        return `${onlineCount} 人がオンラインです。名前一覧は Query 反映待ちです`;
+        return `${onlineCount} 人がオンラインです。名前一覧は UDP Query の公開待ちです`;
     }
-    return `${onlineCount} 人がオンラインです`;
+    return `${onlineCount} 人がオンラインです。名前一覧はステータスAPIの反映待ちです`;
 }
 
 function renderPlayerList(names, message) {
@@ -106,7 +111,9 @@ function renderStatus(status) {
     const players = status.players || {};
     const onlineCount = Number.isFinite(players.online) ? players.online : 0;
     const maxPlayers = Number.isFinite(players.max) ? players.max : 80;
-    const version = status.version || status.protocol?.name || 'Java 1.20.1 Fabric';
+    const version = typeof status.version === 'string'
+        ? status.version
+        : status.version?.name_clean || status.version?.name_raw || status.protocol?.name || 'Java 1.20.1 Fabric';
     const motd = firstLine(status.motd?.clean);
     const statusNote = online
         ? (motd || '公開ステータス API から取得しています')
@@ -130,48 +137,117 @@ function renderStatusError() {
     renderPlayerList(cachedPlayerNames, cachedPlayerNames.length ? '' : 'ステータス取得待ちです');
 }
 
-async function loadServerStatus() {
+function normalizeStatus(data, source) {
+    if (source === 'mcstatus') {
+        return {
+            source,
+            online: Boolean(data.online),
+            players: {
+                online: data.players?.online ?? 0,
+                max: data.players?.max ?? 80,
+                list: data.players?.list || [],
+            },
+            version: data.version?.name_clean || data.version?.name_raw || data.version?.name || 'Java 1.20.1 Fabric',
+            motd: {
+                clean: data.motd?.clean || '',
+            },
+            hostname: data.srv_record?.host || data.host || SERVER_ADDRESS,
+        };
+    }
+
+    return {
+        ...data,
+        source,
+    };
+}
+
+async function fetchStatus(endpoint) {
     const controller = new AbortController();
     const timeoutId = window.setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
     try {
-        const res = await fetch(STATUS_API_URL, {
+        const res = await fetch(endpoint.url, {
             cache: 'no-store',
             signal: controller.signal,
         });
         if (!res.ok) {
-            renderStatusError();
-            return;
+            throw new Error(`Status API failed: ${res.status}`);
         }
 
         const data = await res.json();
-        renderStatus(data);
-
-        if (!data.online) {
-            cachedPlayerNames = [];
-            renderPlayerList(cachedPlayerNames, 'サーバーは現在オフラインです');
-            return;
-        }
-
-        const names = playerNamesFromStatus(data);
-        if (names !== null) {
-            cachedPlayerNames = names;
-            renderPlayerList(cachedPlayerNames);
-            return;
-        }
-
-        const onlineCount = data.players?.online || 0;
-        if (onlineCount > 0) {
-            renderPlayerList([], playerListUnavailableMessage(data, onlineCount));
-            return;
-        }
-
-        renderPlayerList([]);
-    } catch {
-        renderStatusError();
+        return normalizeStatus(data, endpoint.source);
     } finally {
         window.clearTimeout(timeoutId);
     }
+}
+
+async function loadServerStatus() {
+    let bestStatus = null;
+    let bestNames = null;
+
+    for (const endpoint of STATUS_API_ENDPOINTS) {
+        try {
+            const status = await fetchStatus(endpoint);
+            const names = playerNamesFromStatus(status);
+            const onlineCount = status.players?.online || 0;
+
+            if (!bestStatus) {
+                bestStatus = status;
+                bestNames = names;
+            }
+
+            if (!status.online) {
+                bestStatus = status;
+                bestNames = [];
+                break;
+            }
+
+            if (names && names.length > 0) {
+                bestStatus = status;
+                bestNames = names;
+                break;
+            }
+
+            if (onlineCount > 0 && status.debug && status.debug.query === false) {
+                bestStatus = status;
+                bestNames = names;
+            }
+
+            if (onlineCount === 0 && names) {
+                bestStatus = status;
+                bestNames = [];
+                break;
+            }
+        } catch {}
+    }
+
+    if (!bestStatus) {
+        renderStatusError();
+        return;
+    }
+
+    renderStatus(bestStatus);
+
+    if (!bestStatus.online) {
+        cachedPlayerNames = [];
+        renderPlayerList(cachedPlayerNames, 'サーバーは現在オフラインです');
+        return;
+    }
+
+    if (bestNames && bestNames.length > 0) {
+        cachedPlayerNames = bestNames;
+        renderPlayerList(cachedPlayerNames);
+        return;
+    }
+
+    const onlineCount = bestStatus.players?.online || 0;
+    if (onlineCount > 0) {
+        renderPlayerList([], playerListUnavailableMessage(bestStatus, onlineCount));
+        return;
+    }
+
+    cachedPlayerNames = [];
+    renderPlayerList([]);
 }
 
 function initCopyButton() {
