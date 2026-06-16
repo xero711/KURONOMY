@@ -60,42 +60,74 @@ function playerListUnavailableMessage(status, onlineCount) {
     return `${onlineCount} 人がオンラインです。名前一覧はステータスAPIの反映待ちです`;
 }
 
+function createPlayerListItem(name) {
+    const li = document.createElement('li');
+    li.className = 'player-list__item is-new';
+    li.dataset.playerName = name;
+
+    const img = document.createElement('img');
+    img.className = 'player-list__avatar';
+    img.alt = '';
+    img.src = `https://mc-heads.net/avatar/${encodeURIComponent(name)}/32`;
+
+    const span = el('span', { className: 'player-list__name', text: name });
+    li.appendChild(img);
+    li.appendChild(span);
+    li.addEventListener('animationend', () => li.classList.remove('is-new'), { once: true });
+
+    return li;
+}
+
 function renderPlayerList(names, message) {
     const playerList = document.getElementById('player-list');
     if (!playerList) {
         return;
     }
-    playerList.innerHTML = '';
 
     if (message) {
-        playerList.appendChild(el('li', { className: 'player-list__empty', text: message }));
+        const currentMessage = playerList.querySelector('.player-list__empty');
+        if (playerList.children.length === 1 && currentMessage && currentMessage.textContent === message) {
+            return;
+        }
+        playerList.replaceChildren(el('li', { className: 'player-list__empty', text: message }));
         return;
     }
 
     if (names.length > 0) {
-        for (const name of names) {
-            const li = document.createElement('li');
-            li.className = 'player-list__item';
+        const existingItems = new Map(
+            [...playerList.querySelectorAll('.player-list__item[data-player-name]')]
+                .map((item) => [item.dataset.playerName, item]),
+        );
+        const desiredNames = [...new Set(names)];
 
-            const img = document.createElement('img');
-            img.className = 'player-list__avatar';
-            img.alt = '';
-            img.src = `https://mc-heads.net/avatar/${encodeURIComponent(name)}/32`;
+        for (const item of existingItems.values()) {
+            if (!desiredNames.includes(item.dataset.playerName)) {
+                item.remove();
+            }
+        }
 
-            const span = el('span', { className: 'player-list__name', text: name });
-            li.appendChild(img);
-            li.appendChild(span);
-            playerList.appendChild(li);
+        playerList.querySelectorAll('.player-list__empty').forEach((item) => item.remove());
+
+        desiredNames.forEach((name, index) => {
+            const item = existingItems.get(name) || createPlayerListItem(name);
+            const currentAtIndex = playerList.children[index];
+            if (currentAtIndex !== item) {
+                playerList.insertBefore(item, currentAtIndex || null);
+            }
+        });
+
+        while (playerList.children.length > desiredNames.length) {
+            playerList.lastElementChild.remove();
         }
         return;
     }
 
-    playerList.appendChild(
-        el('li', {
-            className: 'player-list__empty',
-            text: '現在オンラインのプレイヤーはいません',
-        }),
-    );
+    const emptyMessage = '現在オンラインのプレイヤーはいません';
+    const currentMessage = playerList.querySelector('.player-list__empty');
+    if (playerList.children.length === 1 && currentMessage && currentMessage.textContent === emptyMessage) {
+        return;
+    }
+    playerList.replaceChildren(el('li', { className: 'player-list__empty', text: emptyMessage }));
 }
 
 function setStatusState(state) {
