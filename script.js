@@ -1,6 +1,6 @@
 const SERVER_ADDRESS = 'xero-x.me';
 const STATUS_API_URL = `https://api.mcsrvstat.us/3/${SERVER_ADDRESS}`;
-const POLL_MS = 5 * 60 * 1000;
+const POLL_MS = 3000;
 const FETCH_TIMEOUT_MS = 10000;
 
 let cachedPlayerNames = [];
