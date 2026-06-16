@@ -5,6 +5,7 @@ const STATUS_API_ENDPOINTS = [
 ];
 const POLL_MS = 3000;
 const FETCH_TIMEOUT_MS = 4500;
+const NIL_UUID = '00000000-0000-0000-0000-000000000000';
 
 let cachedPlayerNames = [];
 let statusRequestId = 0;
@@ -49,6 +50,19 @@ function timestampToMs(value) {
     return timestamp < 10000000000 ? timestamp * 1000 : timestamp;
 }
 
+function isPlaceholderPlayer(player, name) {
+    const uuid = typeof player?.uuid === 'string' ? player.uuid.toLowerCase() : '';
+    const normalizedName = String(name || '').trim().toLowerCase();
+
+    return uuid === NIL_UUID
+        || normalizedName === 'anonymous'
+        || normalizedName === 'anonymous player'
+        || normalizedName === 'unknown'
+        || normalizedName === 'unknown player'
+        || normalizedName === '匿名'
+        || normalizedName === '匿名プレイヤー';
+}
+
 function playerNamesFromStatus(status) {
     const players = status.players || {};
     const list = players.list || players.sample || players.names;
@@ -58,12 +72,15 @@ function playerNamesFromStatus(status) {
 
     return list
         .map((player) => {
-            if (typeof player === 'string') return player;
-            if (player && typeof player.name === 'string') return player.name;
-            if (player && typeof player.username === 'string') return player.username;
-            if (player && typeof player.name_clean === 'string') return player.name_clean;
-            if (player && typeof player.name_raw === 'string') return player.name_raw;
-            return '';
+            let name = '';
+            if (typeof player === 'string') name = player;
+            else if (player && typeof player.name === 'string') name = player.name;
+            else if (player && typeof player.username === 'string') name = player.username;
+            else if (player && typeof player.name_clean === 'string') name = player.name_clean;
+            else if (player && typeof player.name_raw === 'string') name = player.name_raw;
+
+            if (isPlaceholderPlayer(player, name)) return '';
+            return name;
         })
         .filter(Boolean);
 }
@@ -326,7 +343,7 @@ async function loadServerStatus() {
             return;
         }
 
-        if (!final && best.score < 3) {
+        if (!final && (best.score < 3 || best.status.source !== 'mcstatus')) {
             return;
         }
 
