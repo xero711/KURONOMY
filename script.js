@@ -423,6 +423,31 @@ function initCopyButton() {
     });
 }
 
+function initModCards() {
+    document.querySelectorAll('.mod-list li[data-page]').forEach((item) => {
+        const modName = item.querySelector('.modname')?.textContent?.trim() || 'MOD';
+
+        item.setAttribute('role', 'link');
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('aria-label', `${modName} の日本語解説を開く`);
+
+        function openGuide() {
+            window.location.href = item.dataset.page;
+        }
+
+        item.addEventListener('click', (event) => {
+            if (event.target.closest('a, button')) return;
+            openGuide();
+        });
+
+        item.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            openGuide();
+        });
+    });
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.mod-list li').forEach((item, i) => {
         item.style.opacity = 0;
@@ -435,6 +460,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 
     initCopyButton();
+    initModCards();
     initParticles();
     initGoldParticles();
     loadServerStatus();
