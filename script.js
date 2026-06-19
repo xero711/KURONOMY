@@ -4,12 +4,22 @@ const STATUS_API_ENDPOINTS = [
     { source: 'mcsrvstat', url: `https://api.mcsrvstat.us/3/${SERVER_ADDRESS}` },
 ];
 const POLL_MS = 3000;
+const REALTIME_FALLBACK_POLL_MS = 15000;
+const REALTIME_STALE_MS = 30000;
 const FETCH_TIMEOUT_MS = 4500;
 const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+const PAGE_PARAMS = new URLSearchParams(window.location.search);
+const REALTIME_STATUS_BASE = String(PAGE_PARAMS.get('statusBase') || window.KURONOMY_REALTIME_STATUS_BASE || '').replace(/\/$/, '');
+const REALTIME_STATUS_EVENTS_URL = window.KURONOMY_REALTIME_EVENTS_URL
+    || (REALTIME_STATUS_BASE ? `${REALTIME_STATUS_BASE}/events` : '');
 
 let cachedPlayerNames = [];
 let statusRequestId = 0;
 let statusRequestInFlight = false;
+let realtimeStatusConnected = false;
+let realtimeStatusEverConnected = false;
+let lastRealtimeStatusAt = 0;
+let realtimeStatusSource = null;
 
 function el(tag, attrs) {
     const node = document.createElement(tag);
@@ -40,6 +50,23 @@ function firstLine(value) {
 function cacheBustedUrl(url) {
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}_=${Date.now()}`;
+}
+
+function isRealtimeEndpointAllowed(url) {
+    if (!url) {
+        return false;
+    }
+
+    try {
+        const endpoint = new URL(url, window.location.href);
+        return !(window.location.protocol === 'https:' && endpoint.protocol === 'http:');
+    } catch {
+        return false;
+    }
+}
+
+function hasFreshRealtimeStatus() {
+    return realtimeStatusConnected && Date.now() - lastRealtimeStatusAt < REALTIME_STALE_MS;
 }
 
 function timestampToMs(value) {
@@ -228,7 +255,7 @@ function renderStatus(status) {
         : status.version?.name_clean || status.version?.name_raw || status.protocol?.name || 'Java 1.20.1 Fabric';
     const motd = firstLine(status.motd?.clean);
     const statusNote = online
-        ? (motd || '公開ステータス API から取得しています')
+        ? (status.note || motd || '公開ステータス API から取得しています')
         : 'DNS/SRV が未設定、またはサーバーがオフラインです';
 
     setStatusState(online ? 'online' : 'offline');
@@ -325,6 +352,10 @@ async function fetchStatus(endpoint) {
 }
 
 async function loadServerStatus() {
+    if (hasFreshRealtimeStatus()) {
+        return;
+    }
+
     if (statusRequestInFlight) {
         return;
     }
@@ -374,6 +405,75 @@ async function loadServerStatus() {
             statusRequestInFlight = false;
         }
     }
+}
+
+function normalizeRealtimeStatus(status) {
+    const players = status.players || {};
+    const list = Array.isArray(players.list) ? players.list : [];
+    const onlineCount = Number.isFinite(players.online) ? players.online : list.length;
+    const maxPlayers = Number.isFinite(players.max) ? players.max : 50;
+
+    return {
+        ...status,
+        source: status.source || 'kuronomy-realtime',
+        realtime: true,
+        online: Boolean(status.online),
+        players: {
+            online: onlineCount,
+            max: maxPlayers,
+            list,
+        },
+        version: status.version || 'Java 1.20.1 Fabric',
+        motd: status.motd || { clean: '' },
+        note: status.note || 'リアルタイム接続中: 参加/退出を即時反映しています',
+        fetchedAt: Date.now(),
+    };
+}
+
+function renderRealtimeStatus(status) {
+    const normalized = normalizeRealtimeStatus(status);
+    const names = playerNamesFromStatus(normalized) || [];
+
+    realtimeStatusConnected = true;
+    realtimeStatusEverConnected = true;
+    lastRealtimeStatusAt = Date.now();
+    renderStatusResult(normalized, names);
+}
+
+function initRealtimeStatus() {
+    if (!window.EventSource || !isRealtimeEndpointAllowed(REALTIME_STATUS_EVENTS_URL)) {
+        return false;
+    }
+
+    realtimeStatusSource = new EventSource(REALTIME_STATUS_EVENTS_URL);
+
+    function handleMessage(event) {
+        if (!event.data) {
+            return;
+        }
+
+        try {
+            renderRealtimeStatus(JSON.parse(event.data));
+        } catch {
+            realtimeStatusConnected = false;
+        }
+    }
+
+    realtimeStatusSource.addEventListener('status', handleMessage);
+    realtimeStatusSource.onmessage = handleMessage;
+    realtimeStatusSource.onopen = () => {
+        realtimeStatusConnected = true;
+    };
+    realtimeStatusSource.onerror = () => {
+        realtimeStatusConnected = false;
+        if (realtimeStatusEverConnected) {
+            setText('status-note', 'リアルタイム接続を再試行しています');
+        } else {
+            loadServerStatus();
+        }
+    };
+
+    return true;
 }
 
 function initCopyButton() {
@@ -463,8 +563,17 @@ window.addEventListener('DOMContentLoaded', () => {
     initModCards();
     initParticles();
     initGoldParticles();
-    loadServerStatus();
-    setInterval(loadServerStatus, POLL_MS);
+    const realtimeConfigured = initRealtimeStatus();
+    if (realtimeConfigured) {
+        window.setTimeout(() => {
+            if (!hasFreshRealtimeStatus()) {
+                loadServerStatus();
+            }
+        }, 1500);
+    } else {
+        loadServerStatus();
+    }
+    setInterval(loadServerStatus, realtimeConfigured ? REALTIME_FALLBACK_POLL_MS : POLL_MS);
 
     document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {

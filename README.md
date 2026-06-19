@@ -23,4 +23,17 @@ Cloudflare を使う場合、`mc` は DNS only にしてください。通常の
 
 ## Status
 
-トップページのオンライン状態とプレイヤー数は `https://api.mcsrvstat.us/3/xero-x.me` から取得します。API 側は 5 分程度キャッシュされるため、DNS 変更やサーバー再起動直後は反映に時間がかかります。
+トップページのオンライン状態とプレイヤー数は、優先順で取得します。
+
+1. `status-config.js` で指定したリアルタイム SSE API
+2. `https://api.mcstatus.io/v2/status/java/xero-x.me`
+3. `https://api.mcsrvstat.us/3/xero-x.me`
+
+外部ステータス API はキャッシュされるため、参加・退出の即時反映には使いません。即時反映させる場合は Minecraft サーバー側でリアルタイムブリッジを起動し、`https://status.xero-x.me/events` として HTTPS 公開してください。
+
+```powershell
+cd \\FRIDAY-SERVER\gameserver\KURONOMY\KURONOMY
+.\tools\Start-RealtimeStatus.ps1 -HostName 127.0.0.1 -Port 8765 -Background
+```
+
+このブリッジは `logs/latest.log` の join/left を監視しつつ、RCON の `list` で現在の参加者一覧を定期補正します。RCON パスワードはコードには保存せず、`server.properties` の `rcon.password` を読みます。公開時は Cloudflare Tunnel やリバースプロキシで `https://status.xero-x.me` から `http://127.0.0.1:8765` に転送してください。
