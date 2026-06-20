@@ -172,13 +172,9 @@ function createPlayerListItem(name) {
     li.className = 'player-list__item is-new';
     li.dataset.playerName = name;
 
-    const img = document.createElement('img');
-    img.className = 'player-list__avatar';
-    img.alt = '';
-    img.src = `https://mc-heads.net/avatar/${encodeURIComponent(name)}/32`;
-
+    const dot = el('span', { className: 'player-list__dot' });
     const span = el('span', { className: 'player-list__name', text: name });
-    li.appendChild(img);
+    li.appendChild(dot);
     li.appendChild(span);
     li.addEventListener('animationend', () => li.classList.remove('is-new'), { once: true });
 
