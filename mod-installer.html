@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="KURONOMY client mod installer download and setup guide.">
+    <title>MODインストーラー | KURONOMY</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="image.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Syne:wght@600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=20260623-installer">
+</head>
+<body class="guide-page installer-page">
+    <div class="page-bg" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <div class="corner-decoration corner-tl" aria-hidden="true"></div>
+    <div class="corner-decoration corner-tr" aria-hidden="true"></div>
+    <div class="corner-decoration corner-bl" aria-hidden="true"></div>
+    <div class="corner-decoration corner-br" aria-hidden="true"></div>
+    <div class="gold-line gold-line-1" aria-hidden="true"></div>
+    <div class="gold-line gold-line-2" aria-hidden="true"></div>
+
+    <div class="floating-blocks" aria-hidden="true">
+        <div class="floating-block" style="--x:8%;--y:18%;--delay:0s;--size:24px">#</div>
+        <div class="floating-block" style="--x:86%;--y:12%;--delay:2s;--size:20px">+</div>
+        <div class="floating-block" style="--x:72%;--y:62%;--delay:4s;--size:28px">[]</div>
+        <div class="floating-block" style="--x:16%;--y:76%;--delay:1s;--size:22px">&lt;&gt;</div>
+    </div>
+
+    <div class="layout">
+        <header class="site-header guide-header">
+            <div class="site-header__stripe" aria-hidden="true"></div>
+            <p class="site-header__eyebrow">KURONOMY CLIENT SETUP</p>
+            <h1 class="site-header__title">MODインストーラー</h1>
+            <p class="site-header__lead">KURONOMYに参加するためのMOD、Fabric環境、サーバーリスト登録をまとめてセットアップするWindows向けツールです。</p>
+            <div class="site-header__links">
+                <a href="https://github.com/xero711/KURONOMY/releases/download/mod-installer/KURONOMY-Mod-Installer.exe" target="_blank" rel="noopener" class="header-link">今すぐダウンロード</a>
+                <a href="index.html" class="header-link">トップへ戻る</a>
+                <a href="https://discord.gg/X5HpzENpRD" target="_blank" rel="noopener" class="header-link">Discord</a>
+            </div>
+        </header>
+
+        <main class="guide-root">
+            <article class="guide-detail installer-detail">
+                <section class="guide-hero installer-hero">
+                    <p class="guide-kicker">WINDOWS AUTO SETUP</p>
+                    <h2 class="guide-title">KURONOMY-Mod-Installer.exe</h2>
+                    <p class="guide-summary">Minecraftのフォルダを探して、必要なMOD一式を配置し、Fabricの起動環境を構築し、マルチプレイのサーバーリストにKURONOMYを登録します。手動でMODを集めたり、modsフォルダを探したりする手間を減らすための専用インストーラーです。</p>
+                    <div class="guide-meta installer-meta">
+                        <div class="guide-meta__item">
+                            <span class="guide-meta__label">TARGET</span>
+                            <span class="guide-meta__value">Minecraft Java 1.20.1 Fabric</span>
+                        </div>
+                        <div class="guide-meta__item">
+                            <span class="guide-meta__label">SERVER</span>
+                            <span class="guide-meta__value">xero-x.me</span>
+                        </div>
+                        <div class="guide-meta__item">
+                            <span class="guide-meta__label">SIZE</span>
+                            <span class="guide-meta__value">約305 MB</span>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="guide-content">
+                    <section class="guide-section installer-download" aria-labelledby="download-heading">
+                        <h2 id="download-heading">ダウンロード</h2>
+                        <p>下のボタンから最新版のインストーラーをダウンロードできます。保存したEXEを実行すると、KURONOMY向けのクライアント環境を自動で準備します。</p>
+                        <a class="download-cta" href="https://github.com/xero711/KURONOMY/releases/download/mod-installer/KURONOMY-Mod-Installer.exe" target="_blank" rel="noopener">KURONOMY-Mod-Installer.exe をダウンロード</a>
+                        <p class="installer-file-note">SHA-256: <span class="hash-text">3FEE5871EB44FAECC99DE82430A3D3A0316A44214186BE8814694E910FA69AAB</span></p>
+                    </section>
+
+                    <section class="guide-section" aria-labelledby="feature-heading">
+                        <h2 id="feature-heading">このソフトが自動で行うこと</h2>
+                        <ul class="guide-point-list">
+                            <li>KURONOMYで必要なMOD一式をMinecraftのmodsフォルダへ配置します。</li>
+                            <li>Fabric Loaderと1.20.1向けの起動環境を作り、ランチャーから選べる状態にします。</li>
+                            <li>マルチプレイのサーバーリストへ <strong>xero-x.me</strong> を登録します。</li>
+                            <li>手動導入で起きやすいバージョン違い、入れ忘れ、保存先ミスを減らします。</li>
+                        </ul>
+                    </section>
+
+                    <section class="guide-section" aria-labelledby="steps-heading">
+                        <h2 id="steps-heading">使い方</h2>
+                        <ol class="installer-steps">
+                            <li>Minecraft LauncherとMinecraft本体を閉じます。</li>
+                            <li>インストーラーをダウンロードして実行します。</li>
+                            <li>案内に沿ってセットアップを進めます。</li>
+                            <li>完了後、Minecraft LauncherでFabric 1.20.1の起動構成を選びます。</li>
+                            <li>マルチプレイ画面からKURONOMYを選んで接続します。</li>
+                        </ol>
+                    </section>
+
+                    <section class="guide-section" aria-labelledby="trouble-heading">
+                        <h2 id="trouble-heading">うまくいかないとき</h2>
+                        <ul class="guide-point-list">
+                            <li>Windowsの警告が出た場合は、配布元とファイル名を確認してから実行してください。</li>
+                            <li>既存のMOD構成を残したい場合は、先にmodsフォルダをバックアップしておくと戻しやすくなります。</li>
+                            <li>ランチャーにFabricが出ない場合は、Minecraft Launcherを完全に閉じてからもう一度開いてください。</li>
+                            <li>接続できない場合は、サーバーアドレスが <strong>xero-x.me</strong> になっているか確認してください。</li>
+                        </ul>
+                    </section>
+                </div>
+            </article>
+        </main>
+    </div>
+</body>
+</html>
